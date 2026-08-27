@@ -1,16 +1,54 @@
 <!doctype html>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
 <title>Splotchy</title>
-<meta http-equiv="refresh" content="0; url=https://limited-many-valley-waters.trycloudflare.com">
 <style>
   body { font-family: system-ui, sans-serif; margin: 3rem auto; max-width: 34rem;
          line-height: 1.5; padding: 0 1rem; }
-  code { background: #f2f2f2; padding: .1rem .3rem; border-radius: 3px; }
+  a { word-break: break-all; }
   .muted { color: #666; font-size: .9rem; }
+  .err { color: #b23; }
 </style>
 <h1>Splotchy</h1>
-<p>Redirecting to the current session&hellip;</p>
-<p><a href="https://limited-many-valley-waters.trycloudflare.com">https://limited-many-valley-waters.trycloudflare.com</a></p>
-<p class="muted">This address changes whenever the tunnel restarts; this page is
-rewritten to match. You will be asked for a username and password.</p>
-<p class="muted">Updated 2026-08-27 18:05 UTC</p>
+<p id="status">Finding the current session&hellip;</p>
+<p id="link" class="muted"></p>
+<p class="muted">The session address changes whenever the tunnel restarts, so
+this page looks it up each time rather than remembering it. You will be asked
+for a username and password.</p>
+<noscript>
+  <p class="err">This page needs JavaScript to find the current address.</p>
+  <p><a href="url.txt">Open url.txt</a> and use the address inside.</p>
+</noscript>
+<script>
+(function () {
+  var status = document.getElementById('status');
+  var link = document.getElementById('link');
+  // Cache-busted, and no-store: a stale answer here is the whole bug.
+  fetch('url.txt?t=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) {
+      if (!r.ok) { throw new Error('HTTP ' + r.status); }
+      return r.text();
+    })
+    .then(function (text) {
+      var url = text.trim();
+      // Only ever send people to a tunnel host. This file is ours, but a
+      // redirect that forwards anywhere the file says is an open redirect, and
+      // checking costs nothing.
+      if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com\/?$/.test(url)) {
+        status.className = 'err';
+        status.textContent = 'The published address does not look like a tunnel: ' + url;
+        return;
+      }
+      status.textContent = 'Opening the current session…';
+      link.innerHTML = '<a href="' + url + '">' + url + '</a>';
+      location.replace(url);
+    })
+    .catch(function (e) {
+      status.className = 'err';
+      status.textContent = 'Could not look up the current address (' + e.message
+                         + '). The machine may be offline.';
+      link.innerHTML = '<a href="url.txt">See url.txt</a>';
+    });
+})();
+</script>
